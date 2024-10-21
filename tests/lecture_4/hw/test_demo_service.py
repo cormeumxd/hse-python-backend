@@ -2,6 +2,7 @@ import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
 from unittest.mock import Mock
+from pydantic import SecretStr
 
 from lecture_4.demo_service.core.users import UserService, UserInfo, UserRole, password_is_longer_than_8
 from lecture_4.demo_service.api.main import create_app
@@ -22,6 +23,10 @@ def client():
     )
     app.state.user_service = user_service
     return TestClient(app)
+
+@pytest.fixture
+def user_service():
+    return UserService(password_validators=[password_is_longer_than_8])
 
 @pytest.fixture
 def user_creds(client):
@@ -118,3 +123,23 @@ def test_promote_not_admin(client, admin_creds):
     response = client.post("/user-promote", auth=('123', '123'),
                                params={"id": 1})
     assert response.status_code == 401
+
+
+def test_user_register_username_taken(user_service):
+    user_info = UserInfo(username="test_user", name="Test User", birthdate=datetime.now(),
+                         role=UserRole.USER, password="testpassword123")
+    user_service.register(user_info)
+    with pytest.raises(ValueError, match="username is already taken"):
+        user_service.register(user_info)
+
+
+def test_user_register_invalid_password(user_service):
+    user_info = UserInfo(username="test_user_2", name="Test User", birthdate=datetime.now(),
+                         role=UserRole.USER, password="short")
+    with pytest.raises(ValueError, match="invalid password"):
+        user_service.register(user_info)
+
+
+def test_grant_admin_user_not_found(user_service):
+    with pytest.raises(ValueError, match="user not found"):
+        user_service.grant_admin(9999)
