@@ -122,16 +122,16 @@ def test_promote_not_admin(client, admin_creds):
     assert response.status_code == 401
 
 
-def test_user_register_username_taken(user_service):
+def test_user_register_username_existed(user_service):
     user_info = UserInfo(username="test_user", name="Test User", birthdate=datetime.now(),
-                         role=UserRole.USER, password="testpassword123")
+                         role=UserRole.USER, password=SecretStr("Secret123"))
     user_service.register(user_info)
     with pytest.raises(ValueError, match="username is already taken"):
         user_service.register(user_info)
 
 def test_grant_admin_user_not_found(user_service):
     with pytest.raises(ValueError, match="user not found"):
-        user_service.grant_admin(9999)
+        user_service.grant_admin(1337)
 
 
 def test_user_register_short_password(user_service):
