@@ -78,7 +78,6 @@ def test_register_user(client, user_info, expected_status_code):
         ("testuser", "testpassword123", 200),
         ("nonexistent", "testpassword123", 401),
         ("testuser", "wrongpassword", 401),
-        (None, None, 400)
     ],
 )
 def test_get_user_api(client, username, password, expected_status, user_creds):
@@ -96,20 +95,17 @@ def test_get_user_api(client, username, password, expected_status, user_creds):
 def test_password_is_longer_than_8(password, expected):
     assert password_is_longer_than_8(password) == expected
 
-@pytest.mark.parametrize("id,expected", [
-    (1, 200),
-    (1337, 404)
+@pytest.mark.parametrize("params,expected", [
+    ({"id": 1}, 200),
+    ({"id": 1337}, 404),
+    ({}, 400),
+    ({"username": "testuser"}, 200),
+    ({"id": 1, "username": "testuser"}, 400)
 ])
-def test_get(client, user_creds, admin_creds, id, expected):
+def test_get(client, user_creds, admin_creds, params, expected):
     response = client.post("/user-get", auth=(admin_creds["username"], admin_creds["password"]),
-                               params={"id": id})
+                               params=params)
     assert response.status_code == expected
-
-def test_get_error_both(client, user_creds, admin_creds):
-    response = client.post("/user-get", auth=(admin_creds["username"], admin_creds["password"]),
-                               params={"id": 1, "username": "testuser"})
-    assert response.status_code == 400
-
 
 @pytest.mark.parametrize("id,expected", [
     (1, 200),
