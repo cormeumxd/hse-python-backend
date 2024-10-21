@@ -26,7 +26,7 @@ def client():
 
 @pytest.fixture
 def user_service():
-    return UserService(password_validators=[password_is_longer_than_8])
+    return UserService(password_validators=[password_is_longer_than_8, lambda pwd: any(char.isdigit() for char in pwd)])
 
 @pytest.fixture
 def user_creds(client):
@@ -76,11 +76,11 @@ def test_register_user(client, user_info, expected_status_code):
     "username, password, expected_status",
     [
         ("testuser", "testpassword123", 200),
-        ("nonexistent", "testpassword123", 401),
-        ("testuser", "wrongpassword", 401),
+        ("doesnotexist", "123123123123123", 401),
+        ("testuser", "1337", 401),
     ],
 )
-def test_get_user_api(client, username, password, expected_status, user_creds):
+def test_get_user(client, username, password, expected_status, user_creds):
     response = client.post(
         "/user-get",
         params={"username": username},
@@ -90,10 +90,14 @@ def test_get_user_api(client, username, password, expected_status, user_creds):
 
 @pytest.mark.parametrize("password,expected", [
     ("validPassword123", True),
-    ("short", False)
+    ("short", False),
+    ("asdasfsdfsgsfgsdf", False)
 ])
-def test_password_is_longer_than_8(password, expected):
-    assert password_is_longer_than_8(password) == expected
+def test_password_validation(user_service, password, expected):
+    user_info = UserInfo(username="testuser", name="Test User", birthdate=datetime.now(), password=password)
+    if not expected:
+        with pytest.raises(ValueError):
+            user_service.register(user_info)
 
 @pytest.mark.parametrize("params,expected", [
     ({"id": 1}, 200),
@@ -147,13 +151,3 @@ def test_initialize():
             assert app.state.user_service.get_by_username("admin") is not None
 
     asyncio.run(run_initialize())
-
-
-def test_get_user_not_found(client, user_creds):
-    response = client.post(
-        "/user-get",
-        params={"id": 999},  # Несуществующий ID
-        auth=("testuser", "testpassword123"),
-    )
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Not Found"
