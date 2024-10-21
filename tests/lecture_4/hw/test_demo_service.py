@@ -93,11 +93,8 @@ def test_get_user(client, username, password, expected_status, user_creds):
     ("short", False),
     ("asdasfsdfsgsfgsdf", False)
 ])
-def test_password_validation(user_service, password, expected):
-    user_info = UserInfo(username="testuser", name="Test User", birthdate=datetime.now(), password=password)
-    if not expected:
-        with pytest.raises(ValueError):
-            user_service.register(user_info)
+def test_password_is_longer_than_8(password, expected):
+    assert password_is_longer_than_8(password) == expected
 
 @pytest.mark.parametrize("params,expected", [
     ({"id": 1}, 200),
@@ -120,8 +117,8 @@ def test_promote(client, admin_creds, id, expected):
                                params={"id": id})
     assert response.status_code == expected
 
-def test_promote_not_admin(client, admin_creds):
-    response = client.post("/user-promote", auth=('123', '123'),
+def test_promote_not_admin(client, user_creds, admin_creds):
+    response = client.post("/user-promote", auth=('testuser', 'testpassword123'),
                                params={"id": 1})
     assert response.status_code == 401
 
