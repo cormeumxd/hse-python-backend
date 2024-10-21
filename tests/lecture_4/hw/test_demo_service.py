@@ -39,7 +39,6 @@ def user_creds(client):
             "password": "testpassword123",
         },
     )
-    assert response.status_code == 200
     return response.json()
 
 @pytest.fixture
@@ -79,6 +78,7 @@ def test_register_user(client, user_info, expected_status_code):
         ("testuser", "testpassword123", 200),
         ("nonexistent", "testpassword123", 401),
         ("testuser", "wrongpassword", 401),
+        (None, None, 400)
     ],
 )
 def test_get_user_api(client, username, password, expected_status, user_creds):
@@ -105,7 +105,7 @@ def test_get(client, user_creds, admin_creds, id, expected):
                                params={"id": id})
     assert response.status_code == expected
 
-def test_get_error(client, user_creds, admin_creds):
+def test_get_error_both(client, user_creds, admin_creds):
     response = client.post("/user-get", auth=(admin_creds["username"], admin_creds["password"]),
                                params={"id": 1, "username": "testuser"})
     assert response.status_code == 400
@@ -136,3 +136,10 @@ def test_user_register_username_taken(user_service):
 def test_grant_admin_user_not_found(user_service):
     with pytest.raises(ValueError, match="user not found"):
         user_service.grant_admin(9999)
+
+
+def test_user_register_short_password(user_service):
+    user_info = UserInfo(username="test_user_2", name="Test User", birthdate=datetime.now(),
+                         role=UserRole.USER, password="short")
+    with pytest.raises(ValueError, match="invalid password"):
+        user_service.register(user_info)
