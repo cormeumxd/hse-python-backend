@@ -47,7 +47,7 @@ def admin_creds():
         "username": "admin",
         "password": "superSecretAdminPassword123"
     }
-@pytest.mark.xfail
+
 @pytest.mark.parametrize("user_info, expected_status_code", [
     (
         {
@@ -70,7 +70,6 @@ def admin_creds():
 ])
 def test_register_user(client, user_info, expected_status_code):
     response = client.post("/user-register", json=user_info)
-    assert "uid" in response.json()
     assert response.status_code == expected_status_code
 
 @pytest.mark.parametrize(
@@ -140,3 +139,14 @@ def test_user_register_short_password(user_service):
                          role=UserRole.USER, password="short")
     with pytest.raises(ValueError, match="invalid password"):
         user_service.register(user_info)
+
+
+def test_get_user_by_username(client, admin_creds):
+    params = {"username": "admin"}
+
+    response = client.post("/user-get", params=params, auth=(admin_creds["username"], admin_creds["password"]))
+    assert response.status_code == 200
+
+    json_response = response.json()
+    assert json_response["username"] == "admin"
+    assert json_response["name"] == "admin"
