@@ -147,3 +147,13 @@ def test_initialize():
             assert app.state.user_service.get_by_username("admin") is not None
 
     asyncio.run(run_initialize())
+
+
+def test_get_user_not_found(client, user_creds):
+    response = client.post(
+        "/user-get",
+        params={"id": 999},  # Несуществующий ID
+        auth=("testuser", "testpassword123"),
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not Found"
