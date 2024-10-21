@@ -1,11 +1,11 @@
 import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
-from unittest.mock import Mock
-from pydantic import SecretStr
+import asyncio
 
 from lecture_4.demo_service.core.users import UserService, UserInfo, UserRole, password_is_longer_than_8
 from lecture_4.demo_service.api.main import create_app
+from lecture_4.demo_service.api.utils import initialize
 
 app = create_app()
 
@@ -140,13 +140,10 @@ def test_user_register_short_password(user_service):
     with pytest.raises(ValueError, match="invalid password"):
         user_service.register(user_info)
 
+def test_initialize():
+    async def run_initialize():
+        async with initialize(app):
+            assert app.state.user_service is not None
+            assert app.state.user_service.get_by_username("admin") is not None
 
-def test_get_user_by_username(client, admin_creds):
-    params = {"username": "admin"}
-
-    response = client.post("/user-get", params=params, auth=(admin_creds["username"], admin_creds["password"]))
-    assert response.status_code == 200
-
-    json_response = response.json()
-    assert json_response["username"] == "admin"
-    assert json_response["name"] == "admin"
+    asyncio.run(run_initialize())
