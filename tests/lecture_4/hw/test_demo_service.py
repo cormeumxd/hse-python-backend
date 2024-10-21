@@ -39,6 +39,7 @@ def user_creds(client):
             "password": "testpassword123",
         },
     )
+    assert response.status_code == 200
     return response.json()
 
 @pytest.fixture
