@@ -91,7 +91,7 @@ def test_get_user(client, username, password, expected_status, user_creds):
 @pytest.mark.parametrize("password,expected", [
     ("validPassword123", True),
     ("short", False),
-    ("asdasfsdfsgsfgsdf", False)
+    ("asdasfsdfsgsfgsdf", True)
 ])
 def test_password_is_longer_than_8(password, expected):
     assert password_is_longer_than_8(password) == expected
@@ -120,7 +120,7 @@ def test_promote(client, admin_creds, id, expected):
 def test_promote_not_admin(client, user_creds, admin_creds):
     response = client.post("/user-promote", auth=('testuser', 'testpassword123'),
                                params={"id": 1})
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_user_register_username_existed(user_service):
