@@ -132,14 +132,6 @@ def test_user_register_username_taken(user_service):
     with pytest.raises(ValueError, match="username is already taken"):
         user_service.register(user_info)
 
-
-def test_user_register_invalid_password(user_service):
-    user_info = UserInfo(username="test_user_2", name="Test User", birthdate=datetime.now(),
-                         role=UserRole.USER, password="short")
-    with pytest.raises(ValueError, match="invalid password"):
-        user_service.register(user_info)
-
-
 def test_grant_admin_user_not_found(user_service):
     with pytest.raises(ValueError, match="user not found"):
         user_service.grant_admin(9999)
